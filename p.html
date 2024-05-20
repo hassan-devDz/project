@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello, World!</title>
+  <style>
+    /* تنسيق أيقونات المشغل */
+    .playerSymbols {
+      font-family: 'Material Icons';
+    }
+    /* إخفاء الأيقونات والنصوص الغير نشطة */
+    #playSpanIcon, #pauseText {
+      display: none;
+    }
+    /* إظهار الأيقونات والنصوص عند التشغيل */
+    #playPauseBtn.playing #playSpanIcon, 
+    #playPauseBtn.playing #pauseText {
+      display: none;
+    }
+    #playPauseBtn.playing #pauseSpanIcon, 
+    #playPauseBtn.playing #playText {
+      display: inline;
+    }
+    /* إخفاء زر الإعادة عند عدم انتهاء التشغيل */
+    #replayBtn {
+      display: none;
+    }
+  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+  <h1>Hello, World!</h1>
+  
+  <div class="audioVersionPost">
+    <!-- عنصر الصوت -->
+    <audio id="audioPlayer" preload="metadata">
+      <source id="audioSource" src="001.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+
+    <!-- زر التشغيل/الإيقاف -->
+    <button id="playPauseBtn">
+      <span id="playSpanIcon" class="material-icons playerSymbols">play_circle</span>
+      <span id="pauseSpanIcon" class="material-icons playerSymbols">pause_circle</span>
+      <span id="playText">Play</span>
+      <span id="pauseText">Pause</span>
+    </button>
+
+    <!-- زر الإعادة -->
+    <button id="replayBtn">
+      <span class="material-icons playerSymbols">replay</span>
+      <span>Replay</span>
+    </button>
+
+    <!-- زر التخطي للخلف -->
+    <button id="skipBackwardBtn">
+      <span class="material-icons playerSymbols">replay_10</span>
+    </button>
+
+    <!-- زر التخطي للأمام -->
+    <button id="skipForwardBtn">
+      <span class="material-icons playerSymbols">forward_10</span>
+    </button>
+
+    <!-- عرض الوقت الحالي ومدة الصوت الإجمالية -->
+    <span id="currentTime">0:00</span>
+
+    <!-- شريط التقديم -->
+    <input type="range" id="seekSlider" min="0" max="100" value="0">
+
+    <span id="totalTime">0:00</span>
+
+    <!-- قائمة اختيار سرعة التشغيل -->
+    <select id="speedSelect">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </div>
+  
+  <script>
+    // الحصول على العناصر من الصفحة
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const replayBtn = document.getElementById('replayBtn');
+    const skipBackwardBtn = document.getElementById('skipBackwardBtn');
+    const skipForwardBtn = document.getElementById('skipForwardBtn');
+    const speedSelect = document.getElementById('speedSelect');
+    const currentTime = document.getElementById('currentTime');
+    const totalTime = document.getElementById('totalTime');
+    const seekSlider = document.getElementById('seekSlider');
+
+    // وظيفة زر التشغيل/الإيقاف
+    playPauseBtn.addEventListener('click', function() {
+      if (audioPlayer.paused) {
+        audioPlayer.play();
+      } else {
+        audioPlayer.pause();
+      }
+      playPauseBtn.classList.toggle('playing');
+    });
+
+  
+    // وظيفة زر التخطي للخلف 10 ثوانٍ
+    skipBackwardBtn.addEventListener('click', function() {
+      if (audioPlayer.readyState > 0) {
+        audioPlayer.currentTime = Math.max(audioPlayer.currentTime - 10, 0);
+      }
+    });
+
+    // وظيفة زر التخطي للأمام 10 ثوانٍ
+    skipForwardBtn.addEventListener('click', function() {
+      if (audioPlayer.readyState > 0) {
+        audioPlayer.currentTime = Math.min(audioPlayer.currentTime + 10, audioPlayer.duration);
+      }
+    });
+
+
+    // وظيفة تغيير سرعة التشغيل
+    speedSelect.addEventListener('change', function() {
+      audioPlayer.playbackRate = parseFloat(speedSelect.value);
+    });
+
+    // تحديث الوقت الحالي ومدة الصوت الإجمالية عند التشغيل
+    audioPlayer.addEventListener('timeupdate', function() {
+      currentTime.textContent = formatTime(audioPlayer.currentTime);
+      totalTime.textContent = formatTime(audioPlayer.duration)||"0:00";
+      seekSlider.value = (audioPlayer.currentTime / audioPlayer.duration) * 100 || 0;
+      seekSlider.style.background = `linear-gradient(to right, #3557FF ${seekSlider.value}%, #EDF0FF ${seekSlider.value}%)`;
+    });
+
+    // وظيفة شريط التقديم
+    seekSlider.addEventListener('input', function() {
+      audioPlayer.currentTime = (seekSlider.value / 100) * audioPlayer.duration;
+    });
+
+    // وظيفة عند انتهاء الصوت
+    audioPlayer.addEventListener('ended', function() {
+      replayBtn.style.display = 'inline';
+      playPauseBtn.style.display = 'none';
+    });
+
+    // وظيفة زر الإعادة
+    replayBtn.addEventListener('click', function() {
+      audioPlayer.currentTime = 0;
+      audioPlayer.play();
+      playPauseBtn.style.display = 'inline';
+      replayBtn.style.display = 'none';
+      playPauseBtn.classList.add('playing');
+    });
+
+       // تنسيق الوقت لعرضه بالشكل المناسب
+    function formatTime(seconds) {
+      // إذا كانت قيمة seconds غير صالحة أو NaN، إرجاع "0:00"
+      if (isNaN(seconds)) {
+        return "0:00";
+      }
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.floor(seconds % 60);
+      const formattedMinutes = minutes.toString().padStart(1, '0');
+      const formattedSeconds = remainingSeconds.toString().padStart(2, '0');
+      return `${formattedMinutes}:${formattedSeconds}`;
+    }
+
+  </script>
+</body>
+</html>
